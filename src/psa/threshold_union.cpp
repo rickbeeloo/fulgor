@@ -89,11 +89,11 @@ void index<ColorClasses>::pseudoalign_threshold_union(std::string const& sequenc
     /* deduplicate unitig_ids */
     std::sort(unitig_ids.begin(), unitig_ids.end(),
               [](auto const& x, auto const& y) { return x.item < y.item; });
-    uint32_t prev_unitig_id = -1;
+    uint64_t prev_unitig_id = -1;
     for (uint64_t i = 0; i != unitig_ids.size(); ++i) {
-        uint32_t unitig_id = unitig_ids[i].item;
+        uint64_t unitig_id = unitig_ids[i].item;
         if (unitig_id != prev_unitig_id) {
-            uint32_t color_class_id = u2c(unitig_id);
+            uint64_t color_class_id = u2c(unitig_id);
             color_class_ids.push_back({color_class_id, unitig_ids[i].score});
             prev_unitig_id = unitig_id;
         } else {
@@ -105,7 +105,7 @@ void index<ColorClasses>::pseudoalign_threshold_union(std::string const& sequenc
     /* deduplicate color_class_ids */
     std::sort(color_class_ids.begin(), color_class_ids.end(),
               [](auto const& x, auto const& y) { return x.item < y.item; });
-    uint32_t prev_color_class_id = -1;
+    uint64_t prev_color_class_id = -1;
     for (uint64_t i = 0; i != color_class_ids.size(); ++i) {
         uint64_t color_class_id = color_class_ids[i].item;
         if (color_class_id != prev_color_class_id) {

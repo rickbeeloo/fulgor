@@ -98,7 +98,7 @@ void match(const std::string& s, int l, fulgor::index_type const* idx,
                         bool foundMiddle = false;
                         if (dist > 4) {
                             int middlePos = (pos + nextPos) / 2;
-                            uint32_t middleContig = sshash::constants::invalid_uint32;
+                            uint64_t middleContig = sshash::constants::invalid_uint64;
                             int found3pos = pos + dist;
                             pufferfish::CanonicalKmerIterator kit3(kit);
                             kit3.jumpTo(middlePos);
