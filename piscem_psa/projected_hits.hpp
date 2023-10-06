@@ -17,10 +17,10 @@ struct projected_hits {
 
     // sshash::util::contig_span refRange;
     inline bool empty() {
-        return contigIdx_ == sshash::constants::invalid_uint32;
+        return contigIdx_ == sshash::constants::invalid_uint64;
     }  // refRange.empty(); }
 
-    inline uint32_t contig_id() const { return contigIdx_; }
+    inline uint64_t contig_id() const { return contigIdx_; }
     inline bool hit_fw_on_contig() const { return contigOrientation_; }
 
     /*

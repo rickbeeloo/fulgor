@@ -88,7 +88,7 @@ void intersect(std::vector<Iterator>& iterators, std::vector<uint32_t>& colors) 
 }
 
 void stream_through(sshash::dictionary const& k2u, std::string const& sequence,
-                    std::vector<uint32_t>& unitig_ids) {
+                    std::vector<uint64_t>& unitig_ids) {
     sshash::streaming_query_canonical_parsing query(&k2u);
     query.start();
     const uint64_t num_kmers = sequence.length() - k2u.k() + 1;
@@ -109,15 +109,15 @@ void index<ColorClasses>::pseudoalign_full_intersection(std::string const& seque
                                                         std::vector<uint32_t>& colors) const {
     if (sequence.length() < m_k2u.k()) return;
     colors.clear();
-    std::vector<uint32_t> unitig_ids;
+    std::vector<uint64_t> unitig_ids;
     stream_through(m_k2u, sequence, unitig_ids);
     intersect_unitigs(unitig_ids, colors);
 }
 
 template <typename ColorClasses>
-void index<ColorClasses>::intersect_unitigs(std::vector<uint32_t>& unitig_ids,
+void index<ColorClasses>::intersect_unitigs(std::vector<uint64_t>& unitig_ids,
                                             std::vector<uint32_t>& colors) const {
-    std::vector<uint32_t> color_class_ids;
+    std::vector<uint64_t> color_class_ids;
     std::vector<typename ColorClasses::iterator_type> iterators;
 
     /* deduplicate unitig_ids */
@@ -125,8 +125,8 @@ void index<ColorClasses>::intersect_unitigs(std::vector<uint32_t>& unitig_ids,
     auto end = std::unique(unitig_ids.begin(), unitig_ids.end());
     color_class_ids.reserve(end - unitig_ids.begin());
     for (auto it = unitig_ids.begin(); it != end; ++it) {
-        uint32_t unitig_id = *it;
-        uint32_t color_class_id = u2c(unitig_id);
+        uint64_t unitig_id = *it;
+        uint64_t color_class_id = u2c(unitig_id);
         color_class_ids.push_back(color_class_id);
     }
 
