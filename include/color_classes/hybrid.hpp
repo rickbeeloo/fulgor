@@ -3,7 +3,7 @@
 namespace fulgor::color_classes {
 
 struct hybrid {
-    static std::string type() { return "hybrid"; }
+    static const bool meta_colored = false;
 
     enum list_type { delta_gaps = 0, bitmap = 1, complementary_delta_gaps = 2 };
 
@@ -34,7 +34,7 @@ struct hybrid {
             m_num_total_integers = 0;
         }
 
-        void process(uint32_t* const colors, uint64_t list_size) {
+        void process(uint32_t const* colors, uint64_t list_size) {
             /* encode list_size */
             util::write_delta(m_bvb, list_size);
             if (list_size < m_sparse_set_threshold_size) {
@@ -171,7 +171,7 @@ struct hybrid {
             m_prev_val = -1;
             m_curr_val = 0;
             m_it = bit_vector_iterator((m_ptr->m_colors).data(), (m_ptr->m_colors).size(), m_begin);
-            util::read_delta(m_it);  // skip m_size
+            util::read_delta(m_it); /* skip m_size */
             if (m_comp_list_size > 0) {
                 m_comp_val = util::read_delta(m_it);
             } else {
@@ -226,11 +226,11 @@ struct hybrid {
 
         /* update the state of the iterator to the element
            which is greater-than or equal-to lower_bound */
-        void next_geq(uint64_t lower_bound) {
+        void next_geq(const uint64_t lower_bound) {
             assert(lower_bound <= m_num_docs);
             if (m_type == list_type::complementary_delta_gaps) {
                 next_geq_comp_val(lower_bound);
-                m_curr_val = lower_bound;
+                m_curr_val = lower_bound + (m_comp_val == lower_bound);
             } else {
                 while (value() < lower_bound) next();
             }
@@ -268,7 +268,7 @@ struct hybrid {
             }
         }
 
-        void next_geq_comp_val(uint64_t lower_bound) {
+        void next_geq_comp_val(const uint64_t lower_bound) {
             while (m_comp_val < lower_bound) {
                 ++m_pos_in_comp_list;
                 if (m_pos_in_comp_list >= m_comp_list_size) break;
