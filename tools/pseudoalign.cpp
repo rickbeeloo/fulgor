@@ -47,8 +47,8 @@ int do_map(FulgorIndex const& index, fastx_parser::FastxParser<fastx_parser::Rea
            std::mutex& iomut, std::mutex& ofile_mut) {
     std::vector<uint32_t> colors;  // result of pseudo-alignment
     std::stringstream ss;
-    int32_t buff_size{0};
-    constexpr int32_t buff_thresh{100};
+    uint64_t buff_size = 0;
+    constexpr uint64_t buff_thresh = 50;
 
     if ((algo == pseudoalignment_algorithm::SKIPPING or
          algo == pseudoalignment_algorithm::SKIPPING_KALLISTO) and
@@ -270,7 +270,6 @@ int pseudoalign(int argc, char** argv) {
     uint64_t num_threads = 1;
     double threshold = constants::invalid_threshold;
     pseudoalignment_algorithm algo = pseudoalignment_algorithm::FULL_INTERSECTION;
-    bool meta = false;
 
     CLI::App app{"Perform (color-only) pseudoalignment to a Fulgor index."};
     app.add_option("-i,--index", index_filename, "The Fulgor index filename,")

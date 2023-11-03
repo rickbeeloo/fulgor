@@ -25,7 +25,7 @@ if (UNIX AND (CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "x86_64"))
   MESSAGE(STATUS "Compiling with flags: -march=native -mbmi2 -msse4.2")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
   # Flags for PTHash:
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mbmi2 -msse4.2") # for hardware popcount and pdep
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mbmi2 -msse4.2 -mpopcnt") # for hardware popcount and pdep
 endif()
 
 if (UNIX)
@@ -34,15 +34,6 @@ if (UNIX)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ggdb")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-missing-braces -Wno-unknown-attributes -Wno-unused-function")
-
-  # add the rt flag if requested by the user
-  if (LINK_LIBRT)
-    if (APPLE)
-      MESSAGE(STATUS "linking with rt shoul not be necessary on OSX; not adding rt")
-    else()
-      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lrt")
-    endif()
-  endif()
 
   MESSAGE(STATUS "Compiling with flags: ${CMAKE_CXX_FLAGS}")
 
@@ -104,4 +95,10 @@ target_link_libraries(fulgor
   ${CMAKE_DL_LIBS}
 )
 
-
+if (UNIX)
+  if (APPLE)
+    MESSAGE(STATUS "linking with rt should not be necessary on OSX; not adding rt")
+  else()
+    target_link_libraries(fulgor rt)
+  endif()
+endif()
