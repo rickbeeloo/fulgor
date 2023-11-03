@@ -34,9 +34,9 @@ struct index {
     /* from unitig_id to color_class_id */
     uint64_t u2c(uint64_t unitig_id) const { return m_u2c.rank(unitig_id); }
 
-    void pseudoalign_full_intersection(std::string const& sequence,
+    void pseudoalign_full_intersection(std::string_view sequence,
                                        std::vector<uint32_t>& results) const;
-    void pseudoalign_threshold_union(std::string const& sequence, std::vector<uint32_t>& results,
+    void pseudoalign_threshold_union(std::string_view sequence, std::vector<uint32_t>& results,
                                      const double threshold) const;
 
     void intersect_unitigs(std::vector<uint32_t>& unitig_ids, std::vector<uint32_t>& colors) const;

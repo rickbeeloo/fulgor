@@ -12,6 +12,8 @@
 #include "../src/psa/full_intersection.cpp"
 #include "../src/psa/threshold_union.cpp"
 
+#include "../include/topk_range_reporter.hpp"
+
 using namespace fulgor;
 
 enum class pseudoalignment_algorithm : uint8_t {
@@ -46,108 +48,133 @@ int do_map(FulgorIndex const& index, fastx_parser::FastxParser<fastx_parser::Rea
            pseudoalignment_algorithm algo, const double threshold, std::ofstream& out_file,
            std::mutex& iomut, std::mutex& ofile_mut) {
     std::vector<uint32_t> colors;  // result of pseudo-alignment
-    std::stringstream ss;
-    uint64_t buff_size = 0;
-    constexpr uint64_t buff_thresh = 50;
 
-    if ((algo == pseudoalignment_algorithm::SKIPPING or
-         algo == pseudoalignment_algorithm::SKIPPING_KALLISTO) and
-        (index.get_dict().canonicalized())) {
-        std::vector<uint32_t> unitig_ids;                           // for use with skipping
-        std::vector<std::pair<projected_hits, int>> kallisto_hits;  // for use with kallisto psa
+    constexpr uint64_t num_chunks = 256;
+    constexpr uint64_t k = 5;  // number of top results, not the k-mer length!
+    const uint64_t num_docs = index.num_docs();
 
-        piscem_psa::hit_searcher<FulgorIndex> hs(&index);
-        sshash::streaming_query_canonical_parsing qc(&index.get_dict());
+    topk_range_reporter topk_rr(k, num_chunks, num_docs);
 
-        auto get_hits_piscem_psa = [&qc, &hs](const std::string& seq,
-                                              std::vector<uint32_t>& unitig_ids) -> void {
-            hs.clear();
-            auto had_hits = hs.get_raw_hits_sketch(seq, qc, true, false);
-            if (had_hits) {
-                for (auto& h : hs.get_left_hits()) {
-                    if (!h.second.empty()) { unitig_ids.push_back(h.second.contigIdx_); }
-                }
-            }
-        };
+    // std::stringstream ss;
+    // uint64_t buff_size = 0;
+    // constexpr uint64_t buff_thresh = 50;
 
-        auto get_hits_kallisto_psa = [&index, &kallisto_hits](
-                                         const std::string& seq,
-                                         std::vector<uint32_t>& unitig_ids) -> void {
-            kallisto_hits.clear();
-            match(seq, seq.length(), &index, kallisto_hits);
-            if (!kallisto_hits.empty()) {
-                for (auto& h : kallisto_hits) { unitig_ids.push_back(h.first.contigIdx_); }
-            }
-        };
-        // Get the read group by which this thread will
-        // communicate with the parser (*once per-thread*)
-        auto rg = rparser.getReadGroup();
-        while (rparser.refill(rg)) {
-            // Here, rg will contain a chunk of read pairs we can process.
-            for (auto const& record : rg) {
-                switch (algo) {
-                    case pseudoalignment_algorithm::SKIPPING:
-                        get_hits_piscem_psa(record.seq, unitig_ids);
-                        break;
-                    case pseudoalignment_algorithm::SKIPPING_KALLISTO:
-                        get_hits_kallisto_psa(record.seq, unitig_ids);
-                        break;
-                    default:
-                        break;
-                }
+    // if ((algo == pseudoalignment_algorithm::SKIPPING or
+    //      algo == pseudoalignment_algorithm::SKIPPING_KALLISTO) and
+    //     (index.get_dict().canonicalized())) {
+    //     std::vector<uint32_t> unitig_ids;                           // for use with skipping
+    //     std::vector<std::pair<projected_hits, int>> kallisto_hits;  // for use with kallisto psa
 
-                num_reads += 1;
-                index.intersect_unitigs(unitig_ids, colors);
-                if (!colors.empty()) {
-                    num_mapped_reads += 1;
-                    ss << record.name << "\t" << colors.size();
-                    for (auto c : colors) { ss << "\t" << c; }
-                    ss << "\n";
-                } else {
-                    ss << record.name << "\t0\n";
-                }
-                colors.clear();
-                unitig_ids.clear();
+    //     piscem_psa::hit_searcher<FulgorIndex> hs(&index);
+    //     sshash::streaming_query_canonical_parsing qc(&index.get_dict());
 
-                buff_size += 1;
-                if (num_reads > 0 and num_reads % 1000000 == 0) {
-                    iomut.lock();
-                    std::cout << "mapped " << num_reads << " reads" << std::endl;
-                    iomut.unlock();
-                }
-                if (buff_size > buff_thresh) {
-                    std::string outs = ss.str();
-                    ss.str("");
-                    ofile_mut.lock();
-                    out_file.write(outs.data(), outs.size());
-                    ofile_mut.unlock();
-                    buff_size = 0;
-                }
-            }
-        }
-    } else {
-        auto rg = rparser.getReadGroup();
-        while (rparser.refill(rg)) {
-            for (auto const& record : rg) {
+    //     auto get_hits_piscem_psa = [&qc, &hs](const std::string& seq,
+    //                                           std::vector<uint32_t>& unitig_ids) -> void {
+    //         hs.clear();
+    //         auto had_hits = hs.get_raw_hits_sketch(seq, qc, true, false);
+    //         if (had_hits) {
+    //             for (auto& h : hs.get_left_hits()) {
+    //                 if (!h.second.empty()) { unitig_ids.push_back(h.second.contigIdx_); }
+    //             }
+    //         }
+    //     };
+
+    //     auto get_hits_kallisto_psa = [&index, &kallisto_hits](
+    //                                      const std::string& seq,
+    //                                      std::vector<uint32_t>& unitig_ids) -> void {
+    //         kallisto_hits.clear();
+    //         match(seq, seq.length(), &index, kallisto_hits);
+    //         if (!kallisto_hits.empty()) {
+    //             for (auto& h : kallisto_hits) { unitig_ids.push_back(h.first.contigIdx_); }
+    //         }
+    //     };
+    //     // Get the read group by which this thread will
+    //     // communicate with the parser (*once per-thread*)
+    //     auto rg = rparser.getReadGroup();
+    //     while (rparser.refill(rg)) {
+    //         // Here, rg will contain a chunk of read pairs we can process.
+    //         for (auto const& record : rg) {
+    //             switch (algo) {
+    //                 case pseudoalignment_algorithm::SKIPPING:
+    //                     get_hits_piscem_psa(record.seq, unitig_ids);
+    //                     break;
+    //                 case pseudoalignment_algorithm::SKIPPING_KALLISTO:
+    //                     get_hits_kallisto_psa(record.seq, unitig_ids);
+    //                     break;
+    //                 default:
+    //                     break;
+    //             }
+
+    //             num_reads += 1;
+    //             index.intersect_unitigs(unitig_ids, colors);
+    //             if (!colors.empty()) {
+    //                 num_mapped_reads += 1;
+    //                 ss << record.name << "\t" << colors.size();
+    //                 for (auto c : colors) { ss << "\t" << c; }
+    //                 ss << "\n";
+    //             } else {
+    //                 ss << record.name << "\t0\n";
+    //             }
+    //             colors.clear();
+    //             unitig_ids.clear();
+
+    //             buff_size += 1;
+    //             if (num_reads > 0 and num_reads % 1000000 == 0) {
+    //                 iomut.lock();
+    //                 std::cout << "mapped " << num_reads << " reads" << std::endl;
+    //                 iomut.unlock();
+    //             }
+    //             if (buff_size > buff_thresh) {
+    //                 std::string outs = ss.str();
+    //                 ss.str("");
+    //                 ofile_mut.lock();
+    //                 out_file.write(outs.data(), outs.size());
+    //                 ofile_mut.unlock();
+    //                 buff_size = 0;
+    //             }
+    //         }
+    //     }
+    // } else {
+    auto rg = rparser.getReadGroup();
+    while (rparser.refill(rg)) {
+        for (auto const& record : rg) {
+            uint64_t chunk_length = (record.seq.length() + num_chunks - 1) / num_chunks;
+
+            /* if chunk_length does not contain at least one k-mer, we skip the query
+               for the moment. TODO: handle this case better.  */
+            if (chunk_length < index.k()) continue;
+
+            char const* begin = record.seq.data();
+            uint64_t length = 0;
+            for (uint32_t chunk_id = 0; chunk_id != num_chunks; ++chunk_id) {
+                if (chunk_id == num_chunks - 1) chunk_length = record.seq.length() - length;
+
+                std::string_view seq(begin, chunk_length);
+                length += chunk_length;
+                begin += chunk_length - index.k() + 1;
+
                 switch (algo) {
                     case pseudoalignment_algorithm::FULL_INTERSECTION:
-                        index.pseudoalign_full_intersection(record.seq, colors);
+                        index.pseudoalign_full_intersection(seq, colors);
                         break;
                     case pseudoalignment_algorithm::THRESHOLD_UNION:
-                        index.pseudoalign_threshold_union(record.seq, colors, threshold);
+                        index.pseudoalign_threshold_union(seq, colors, threshold);
                         break;
                     default:
                         break;
                 }
-                buff_size += 1;
-                if (!colors.empty()) {
-                    num_mapped_reads += 1;
-                    ss << record.name << "\t" << colors.size();
-                    for (auto c : colors) { ss << "\t" << c; }
-                    ss << "\n";
-                } else {
-                    ss << record.name << "\t0\n";
-                }
+                // buff_size += 1;
+                // if (!colors.empty()) {
+                //     num_mapped_reads += 1;
+                //     ss << record.name << "\t" << colors.size();
+                //     for (auto c : colors) { ss << "\t" << c; }
+                //     ss << "\n";
+                // } else {
+                //     ss << record.name << "\t0\n";
+                // }
+
+                topk_rr.process_doc_ids(chunk_id, colors);
+
                 num_reads += 1;
                 colors.clear();
                 if (num_reads > 0 and num_reads % 1000000 == 0) {
@@ -155,27 +182,43 @@ int do_map(FulgorIndex const& index, fastx_parser::FastxParser<fastx_parser::Rea
                     std::cout << "mapped " << num_reads << " reads" << std::endl;
                     iomut.unlock();
                 }
-                if (buff_size > buff_thresh) {
-                    std::string outs = ss.str();
-                    ss.str("");
-                    ofile_mut.lock();
-                    out_file.write(outs.data(), outs.size());
-                    ofile_mut.unlock();
-                    buff_size = 0;
-                }
+                // if (buff_size > buff_thresh) {
+                //     std::string outs = ss.str();
+                //     ss.str("");
+                //     ofile_mut.lock();
+                //     out_file.write(outs.data(), outs.size());
+                //     ofile_mut.unlock();
+                //     buff_size = 0;
+                // }
             }
+
+            topk_rr.finalize();
+
+            /* report the topk results for each chunk  */
+            std::cout << record.name << '\n';
+            for (uint32_t chunk_id = 0; chunk_id != num_chunks; ++chunk_id) {
+                std::cout << "chunk_id = " << chunk_id << ": ";
+                auto const& topk = topk_rr.topk(chunk_id);
+                for (auto const& r : topk) {
+                    std::cout << r.doc_id << ":[" << r.begin << "," << r.end << "] ";
+                }
+                std::cout << std::endl;
+            }
+
+            topk_rr.clear();  // clear for the next query
         }
     }
+    // }
 
     // dump anything left in the buffer
-    if (buff_size > 0) {
-        std::string outs = ss.str();
-        ss.str("");
-        ofile_mut.lock();
-        out_file.write(outs.data(), outs.size());
-        ofile_mut.unlock();
-        buff_size = 0;
-    }
+    // if (buff_size > 0) {
+    //     std::string outs = ss.str();
+    //     ss.str("");
+    //     ofile_mut.lock();
+    //     out_file.write(outs.data(), outs.size());
+    //     ofile_mut.unlock();
+    //     buff_size = 0;
+    // }
 
     return 0;
 }
