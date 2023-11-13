@@ -1,5 +1,8 @@
 #pragma once
 
+#include <vector>
+#include <algorithm>
+
 namespace fulgor {
 
 struct doc_id_range {
@@ -88,6 +91,10 @@ struct topk_range_reporter {
     }
 
     void finalize() {
+        for (uint64_t doc_id = 0; doc_id != m_ranges.size(); ++doc_id) {
+            if (m_ranges[doc_id].begin == invalid_id) continue;
+            process_range(doc_id, m_ranges[doc_id]);
+        }
         for (auto& q : m_topk_queues) q.finalize();
     }
 
@@ -106,7 +113,7 @@ private:
     std::vector<range> m_ranges;
 
     void process_range(uint32_t doc_id, range const& r) {
-        for (uint32_t chunk_id = r.begin; chunk_id != r.end; ++chunk_id) {
+        for (uint32_t chunk_id = r.begin; chunk_id <= r.end; ++chunk_id) {
             m_topk_queues[chunk_id].insert(doc_id_range(doc_id, r.begin, r.end));
         }
     }

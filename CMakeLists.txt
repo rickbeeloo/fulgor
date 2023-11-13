@@ -102,3 +102,6 @@ if (UNIX)
     target_link_libraries(fulgor rt)
   endif()
 endif()
+
+# tests
+add_executable(test_topk_range_reporter test/test_topk_range_reporter.cpp)
