@@ -138,19 +138,25 @@ int do_map(FulgorIndex const& index, fastx_parser::FastxParser<fastx_parser::Rea
     auto rg = rparser.getReadGroup();
     while (rparser.refill(rg)) {
         for (auto const& record : rg) {
-            uint64_t chunk_length = (record.seq.length() + num_chunks - 1) / num_chunks;
+            uint64_t chunk_length = record.seq.length() / num_chunks;
+
+            // std::cout << "record.seq.length() " << record.seq.length() << std::endl;
+            // std::cout << "chunk_length " << chunk_length << std::endl;
 
             /* if chunk_length does not contain at least one k-mer, we skip the query
                for the moment. TODO: handle this case better.  */
             if (chunk_length < index.k()) continue;
 
             char const* begin = record.seq.data();
-            uint64_t length = 0;
             for (uint32_t chunk_id = 0; chunk_id != num_chunks; ++chunk_id) {
-                if (chunk_id == num_chunks - 1) chunk_length = record.seq.length() - length;
+                if (chunk_id == num_chunks - 1) {
+                    assert(record.seq.length() >= (num_chunks - 1) * chunk_length);
+                    chunk_length = record.seq.length() - (num_chunks - 1) * chunk_length;
+                }
+
+                if (chunk_length < index.k()) continue;
 
                 std::string_view seq(begin, chunk_length);
-                length += chunk_length;
                 begin += chunk_length - index.k() + 1;
 
                 switch (algo) {
@@ -164,14 +170,14 @@ int do_map(FulgorIndex const& index, fastx_parser::FastxParser<fastx_parser::Rea
                         break;
                 }
                 // buff_size += 1;
-                // if (!colors.empty()) {
-                //     num_mapped_reads += 1;
-                //     ss << record.name << "\t" << colors.size();
-                //     for (auto c : colors) { ss << "\t" << c; }
-                //     ss << "\n";
-                // } else {
-                //     ss << record.name << "\t0\n";
-                // }
+                if (!colors.empty()) {
+                    num_mapped_reads += 1;
+                    //     ss << record.name << "\t" << colors.size();
+                    //     for (auto c : colors) { ss << "\t" << c; }
+                    //     ss << "\n";
+                    // } else {
+                    //     ss << record.name << "\t0\n";
+                }
 
                 topk_rr.process_doc_ids(chunk_id, colors);
 
