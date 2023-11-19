@@ -12,9 +12,12 @@
 #include "../src/psa/full_intersection.cpp"
 #include "../src/psa/threshold_union.cpp"
 
-#include "../include/topk_range_reporter.hpp"
+#include "../include/top_range_reporter.hpp"
 
 using namespace fulgor;
+
+constexpr uint64_t T = 5;                // Number of top results for top range reporter.
+constexpr uint64_t chunk_length = 1024;  // In nucleotides.
 
 enum class pseudoalignment_algorithm : uint8_t {
     FULL_INTERSECTION,
@@ -48,12 +51,9 @@ int do_map(FulgorIndex const& index, fastx_parser::FastxParser<fastx_parser::Rea
            pseudoalignment_algorithm algo, const double threshold, std::ofstream& out_file,
            std::mutex& iomut, std::mutex& ofile_mut) {
     std::vector<uint32_t> colors;  // result of pseudo-alignment
-
-    constexpr uint64_t num_chunks = 256;
-    constexpr uint64_t k = 5;  // number of top results, not the k-mer length!
     const uint64_t num_docs = index.num_docs();
 
-    topk_range_reporter topk_rr(k, num_chunks, num_docs);
+    top_range_reporter top_rr;
 
     // std::stringstream ss;
     // uint64_t buff_size = 0;
@@ -138,26 +138,29 @@ int do_map(FulgorIndex const& index, fastx_parser::FastxParser<fastx_parser::Rea
     auto rg = rparser.getReadGroup();
     while (rparser.refill(rg)) {
         for (auto const& record : rg) {
-            uint64_t chunk_length = record.seq.length() / num_chunks;
+            if (record.seq.length() < chunk_length / 2) continue;  // skip it!
+
+            uint64_t num_chunks = record.seq.length() / chunk_length;
+            uint64_t n = std::min<uint64_t>(chunk_length, record.seq.length());
+            if (num_chunks == 0) num_chunks = 1;
+
+            top_rr.init(T, num_chunks, num_docs);
 
             // std::cout << "record.seq.length() " << record.seq.length() << std::endl;
-            // std::cout << "chunk_length " << chunk_length << std::endl;
-
-            /* if chunk_length does not contain at least one k-mer, we skip the query
-               for the moment. TODO: handle this case better.  */
-            if (chunk_length < index.k()) continue;
+            // std::cout << "chunk_length " << chunk_length <<
+            // std::endl;
 
             char const* begin = record.seq.data();
             for (uint32_t chunk_id = 0; chunk_id != num_chunks; ++chunk_id) {
                 if (chunk_id == num_chunks - 1) {
-                    assert(record.seq.length() >= (num_chunks - 1) * chunk_length);
-                    chunk_length = record.seq.length() - (num_chunks - 1) * chunk_length;
+                    assert(record.seq.length() >= (num_chunks - 1) * n);
+                    n = record.seq.length() - (num_chunks - 1) * n;
                 }
 
-                if (chunk_length < index.k()) continue;
+                if (n < index.k()) continue;
 
-                std::string_view seq(begin, chunk_length);
-                begin += chunk_length - index.k() + 1;
+                std::string_view seq(begin, n);
+                begin += n - index.k() + 1;
 
                 switch (algo) {
                     case pseudoalignment_algorithm::FULL_INTERSECTION:
@@ -179,7 +182,7 @@ int do_map(FulgorIndex const& index, fastx_parser::FastxParser<fastx_parser::Rea
                     //     ss << record.name << "\t0\n";
                 }
 
-                topk_rr.process_doc_ids(chunk_id, colors);
+                top_rr.process_doc_ids(chunk_id, colors);
 
                 num_reads += 1;
                 colors.clear();
@@ -198,20 +201,18 @@ int do_map(FulgorIndex const& index, fastx_parser::FastxParser<fastx_parser::Rea
                 // }
             }
 
-            topk_rr.finalize();
+            top_rr.finalize();
 
             /* report the topk results for each chunk  */
             std::cout << record.name << '\n';
             for (uint32_t chunk_id = 0; chunk_id != num_chunks; ++chunk_id) {
                 std::cout << "chunk_id = " << chunk_id << ": ";
-                auto const& topk = topk_rr.topk(chunk_id);
+                auto const& topk = top_rr.topk(chunk_id);
                 for (auto const& r : topk) {
                     std::cout << r.doc_id << ":[" << r.begin << "," << r.end << "] ";
                 }
                 std::cout << std::endl;
             }
-
-            topk_rr.clear();  // clear for the next query
         }
     }
     // }

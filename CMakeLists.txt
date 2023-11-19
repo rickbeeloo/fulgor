@@ -104,4 +104,4 @@ if (UNIX)
 endif()
 
 # tests
-add_executable(test_topk_range_reporter test/test_topk_range_reporter.cpp)
+add_executable(test_top_range_reporter test/test_top_range_reporter.cpp)
