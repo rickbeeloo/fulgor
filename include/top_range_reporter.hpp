@@ -48,7 +48,7 @@ struct top_queue {
 
     void finalize() { std::sort_heap(m_q.begin(), m_q.end(), comparator()); }
 
-    std::vector<doc_id_range> const& topk() const { return m_q; }
+    std::vector<doc_id_range> const& top() const { return m_q; }
     void clear() { m_q.clear(); }
 
 private:
@@ -103,9 +103,9 @@ struct top_range_reporter {
         for (auto& q : m_top_queues) q.finalize();
     }
 
-    std::vector<doc_id_range> const& topk(uint32_t chunk_id) const {
+    std::vector<doc_id_range> const& top(uint32_t chunk_id) const {
         assert(chunk_id < m_top_queues.size());
-        return m_top_queues[chunk_id].topk();
+        return m_top_queues[chunk_id].top();
     }
 
 private:

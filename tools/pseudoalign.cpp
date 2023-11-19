@@ -138,26 +138,26 @@ int do_map(FulgorIndex const& index, fastx_parser::FastxParser<fastx_parser::Rea
     auto rg = rparser.getReadGroup();
     while (rparser.refill(rg)) {
         for (auto const& record : rg) {
-            if (record.seq.length() < chunk_length / 2) continue;  // skip it!
-
-            uint64_t num_chunks = record.seq.length() / chunk_length;
+            uint64_t num_chunks = (record.seq.length() + chunk_length - 1) / chunk_length;
             uint64_t n = std::min<uint64_t>(chunk_length, record.seq.length());
-            if (num_chunks == 0) num_chunks = 1;
-
-            top_rr.init(T, num_chunks, num_docs);
-
             // std::cout << "record.seq.length() " << record.seq.length() << std::endl;
-            // std::cout << "chunk_length " << chunk_length <<
-            // std::endl;
+            // std::cout << "num_chunks " << num_chunks << std::endl;
 
             char const* begin = record.seq.data();
+            bool skip_last_chunk = false;
+            top_rr.init(T, num_chunks, num_docs);
+
             for (uint32_t chunk_id = 0; chunk_id != num_chunks; ++chunk_id) {
                 if (chunk_id == num_chunks - 1) {
                     assert(record.seq.length() >= (num_chunks - 1) * n);
                     n = record.seq.length() - (num_chunks - 1) * n;
+                    if (n < index.k() or n < chunk_length / 2) {
+                        skip_last_chunk = true;
+                        break;
+                    }
                 }
 
-                if (n < index.k()) continue;
+                // std::cout << "chunk_id " << chunk_id << "; n " << n << std::endl;
 
                 std::string_view seq(begin, n);
                 begin += n - index.k() + 1;
@@ -204,14 +204,21 @@ int do_map(FulgorIndex const& index, fastx_parser::FastxParser<fastx_parser::Rea
             top_rr.finalize();
 
             /* report the topk results for each chunk  */
-            std::cout << record.name << '\n';
+            out_file << '>' << record.name << '\n';
+            out_file << "num_chunks = " << num_chunks - (skip_last_chunk) << '\n';
             for (uint32_t chunk_id = 0; chunk_id != num_chunks; ++chunk_id) {
-                std::cout << "chunk_id = " << chunk_id << ": ";
-                auto const& topk = top_rr.topk(chunk_id);
-                for (auto const& r : topk) {
-                    std::cout << r.doc_id << ":[" << r.begin << "," << r.end << "] ";
+                if (chunk_id == num_chunks - 1 and skip_last_chunk) break;
+                out_file << "chunk_id = " << chunk_id << ": ";
+                auto const& top = top_rr.top(chunk_id);
+                for (uint64_t i = 0; i != top.size(); ++i) {
+                    auto const& r = top[i];
+                    out_file << r.doc_id << ":[" << r.begin << "," << r.end << "]";
+                    if (i != top.size() - 1) {
+                        out_file << ' ';
+                    } else {
+                        out_file << '\n';
+                    }
                 }
-                std::cout << std::endl;
             }
         }
     }

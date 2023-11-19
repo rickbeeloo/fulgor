@@ -33,8 +33,8 @@ int main() {
       */
     for (uint32_t chunk_id = 0; chunk_id != num_chunks; ++chunk_id) {
         std::cout << "chunk_id = " << chunk_id << ": ";
-        auto const& topk = top_rr.topk(chunk_id);
-        for (auto const& r : topk) {
+        auto const& top = top_rr.top(chunk_id);
+        for (auto const& r : top) {
             std::cout << r.doc_id << ":[" << r.begin << "," << r.end << "] ";
         }
         std::cout << std::endl;
