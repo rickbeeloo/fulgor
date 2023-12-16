@@ -6,8 +6,13 @@ if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release")
 endif ()
 
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+  set(OpenMP_C_FLAGS "-Xpreprocessor -fopenmp")
+  set(OpenMP_C_LIB_NAMES "omp")
+  set(OpenMP_omp_LIBRARY omp)
+else()
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
 endif ()
 
 MESSAGE(STATUS "CMAKE_BUILD_TYPE: " ${CMAKE_BUILD_TYPE})
@@ -20,7 +25,7 @@ if (UNIX AND (CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "x86_64"))
   MESSAGE(STATUS "Compiling with flags: -march=native -mbmi2 -msse4.2")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
   # Flags for PTHash:
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mbmi2 -msse4.2") # for hardware popcount and pdep
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mbmi2 -msse4.2 -mpopcnt") # for hardware popcount and pdep
 endif()
 
 if (UNIX)
@@ -29,15 +34,6 @@ if (UNIX)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ggdb")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-missing-braces -Wno-unknown-attributes -Wno-unused-function")
-
-  # add the rt flag if requested by the user
-  if (LINK_LIBRT)
-    if (APPLE)
-      MESSAGE(STATUS "linking with rt shoul not be necessary on OSX; not adding rt")
-    else()
-      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lrt")
-    endif()
-  endif()
 
   MESSAGE(STATUS "Compiling with flags: ${CMAKE_CXX_FLAGS}")
 
@@ -53,6 +49,9 @@ endif()
 
 include_directories(include)
 include_directories(external/FQFeeder/include)
+include_directories(external/sketch/include)
+include_directories(external/sketch/include/blaze)
+include_directories(external/kmeans/include)
 
 ## GGCAT ####
 
@@ -95,3 +94,11 @@ target_link_libraries(fulgor
   ${GGCAT_CXX_INTEROP}
   ${CMAKE_DL_LIBS}
 )
+
+if (UNIX)
+  if (APPLE)
+    MESSAGE(STATUS "linking with rt should not be necessary on OSX; not adding rt")
+  else()
+    target_link_libraries(fulgor rt)
+  endif()
+endif()
