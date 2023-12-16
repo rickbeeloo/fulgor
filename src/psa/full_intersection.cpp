@@ -217,7 +217,7 @@ void index<ColorClasses>::intersect_unitigs(std::vector<uint64_t>& unitig_ids,
     for (auto it = unitig_ids.begin(); it != end; ++it) {
         uint64_t unitig_id = *it;
         uint64_t color_class_id = u2c(unitig_id);
-        color_class_ids.push_back(color_class_id);
+        tmp.push_back(color_class_id);
     }
 
     /* deduplicate color class ids */
