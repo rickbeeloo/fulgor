@@ -125,10 +125,10 @@ struct index<ColorClasses>::builder {
                 [&](ggcat::Slice<char> const unitig, ggcat::Slice<uint32_t> const colors,
                     bool /* same_color */) {
                     auto lookup_result = idx.m_k2u.lookup_advanced(unitig.data);
-                    uint32_t unitig_id = lookup_result.contig_id;
+                    uint64_t unitig_id = lookup_result.contig_id;
                     uint32_t color_id = idx.u2c(unitig_id);
                     for (uint64_t i = 1; i != unitig.size - idx.m_k2u.k() + 1; ++i) {
-                        uint32_t got = idx.m_k2u.lookup_advanced(unitig.data + i).contig_id;
+                        uint64_t got = idx.m_k2u.lookup_advanced(unitig.data + i).contig_id;
                         if (got != unitig_id) {
                             std::cout << "got unitig_id " << got << " but expected " << unitig_id
                                       << std::endl;

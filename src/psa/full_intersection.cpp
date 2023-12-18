@@ -90,7 +90,7 @@ void intersect(std::vector<Iterator>& iterators, std::vector<uint32_t>& colors,
 }
 
 template <typename Iterator>
-void meta_intersect(std::vector<Iterator>& iterators, std::vector<uint32_t>& colors,
+void meta_intersect(std::vector<Iterator>& iterators, std::vector<uint64_t>& colors,
                     std::vector<uint32_t>& partition_ids) {
     assert(colors.empty());
     assert(partition_ids.empty());
@@ -225,7 +225,7 @@ void index<ColorClasses>::intersect_unitigs(std::vector<uint64_t>& unitig_ids,
     end = std::unique(tmp.begin(), tmp.end());
     iterators.reserve(end - tmp.begin());
     for (auto it = tmp.begin(); it != end; ++it) {
-        uint64_t color_class_id = *it;
+        uint32_t color_class_id = *it;
         auto fwd_it = m_ccs.colors(color_class_id);
         iterators.push_back(fwd_it);
     }

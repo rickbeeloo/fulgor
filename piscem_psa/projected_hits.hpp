@@ -7,11 +7,11 @@ struct projected_hits {
     uint64_t contigIdx_;
     // The relative position of the k-mer inducing this hit on the
     // contig
-    uint32_t contigPos_;
+    uint64_t contigPos_;
     // How the k-mer inducing this hit maps to the contig
     // true for fw, false for rc
     bool contigOrientation_;
-    uint32_t contigLen_;
+    uint64_t contigLen_;
     uint64_t globalPos_;
     uint32_t k_;
 
