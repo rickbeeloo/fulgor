@@ -207,7 +207,7 @@ void index<ColorClasses>::intersect_unitigs(std::vector<uint64_t>& unitig_ids,
                                             std::vector<uint32_t>& colors) const {
     /* here we use it to hold the color class ids;
        in meta_intersect we use it to hold the partition ids */
-    std::vector<uint64_t> tmp;
+    std::vector<uint32_t> tmp;
     std::vector<typename ColorClasses::iterator_type> iterators;
 
     /* deduplicate unitig_ids */
@@ -216,7 +216,7 @@ void index<ColorClasses>::intersect_unitigs(std::vector<uint64_t>& unitig_ids,
     tmp.reserve(end - unitig_ids.begin());
     for (auto it = unitig_ids.begin(); it != end; ++it) {
         uint64_t unitig_id = *it;
-        uint64_t color_class_id = u2c(unitig_id);
+        uint32_t color_class_id = u2c(unitig_id);
         tmp.push_back(color_class_id);
     }
 
