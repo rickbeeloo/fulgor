@@ -90,7 +90,7 @@ void intersect(std::vector<Iterator>& iterators, std::vector<uint32_t>& colors,
 }
 
 template <typename Iterator>
-void meta_intersect(std::vector<Iterator>& iterators, std::vector<uint64_t>& colors,
+void meta_intersect(std::vector<Iterator>& iterators, std::vector<uint32_t>& colors,
                     std::vector<uint32_t>& partition_ids) {
     assert(colors.empty());
     assert(partition_ids.empty());
