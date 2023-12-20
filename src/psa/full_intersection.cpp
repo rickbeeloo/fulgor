@@ -225,7 +225,7 @@ void index<ColorClasses>::intersect_unitigs(std::vector<uint64_t>& unitig_ids,
     end = std::unique(tmp.begin(), tmp.end());
     iterators.reserve(end - tmp.begin());
     for (auto it = tmp.begin(); it != end; ++it) {
-        uint32_t color_class_id = *it;
+        uint64_t color_class_id = *it;
         auto fwd_it = m_ccs.colors(color_class_id);
         iterators.push_back(fwd_it);
     }
