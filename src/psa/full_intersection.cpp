@@ -212,9 +212,9 @@ void index<ColorClasses>::intersect_unitigs(std::vector<uint64_t>& unitig_ids,
 
     /* deduplicate unitig_ids */
     std::sort(unitig_ids.begin(), unitig_ids.end());
-    auto end = std::unique(unitig_ids.begin(), unitig_ids.end());
-    tmp.reserve(end - unitig_ids.begin());
-    for (auto it = unitig_ids.begin(); it != end; ++it) {
+    auto end_unitig_ids = std::unique(unitig_ids.begin(), unitig_ids.end());
+    tmp.reserve(end_unitig_ids - unitig_ids.begin());
+    for (auto it = unitig_ids.begin(); it != end_unitig_ids; ++it) {
         uint64_t unitig_id = *it;
         uint32_t color_class_id = u2c(unitig_id);
         tmp.push_back(color_class_id);
@@ -222,9 +222,9 @@ void index<ColorClasses>::intersect_unitigs(std::vector<uint64_t>& unitig_ids,
 
     /* deduplicate color class ids */
     std::sort(tmp.begin(), tmp.end());
-    end = std::unique(tmp.begin(), tmp.end());
-    iterators.reserve(end - tmp.begin());
-    for (auto it = tmp.begin(); it != end; ++it) {
+    auto end_tmp = std::unique(tmp.begin(), tmp.end());
+    iterators.reserve(end_tmp - tmp.begin());
+    for (auto it = tmp.begin(); it != end_tmp; ++it) {
         uint64_t color_class_id = *it;
         auto fwd_it = m_ccs.colors(color_class_id);
         iterators.push_back(fwd_it);
