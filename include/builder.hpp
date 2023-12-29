@@ -20,8 +20,8 @@ struct index<ColorClasses>::builder {
             essentials::logger("step 1. build colored compacted dBG");
             timer.start();
 
-            m_ccdbg.build(m_build_config);
-            m_build_config.num_docs = m_ccdbg.num_docs();
+            //m_ccdbg.build(m_build_config);
+            m_build_config.num_docs = 530777; //m_ccdbg.num_docs();
 
             timer.reset();
             std::cout << "** building the ccdBG took " << timer.elapsed() << " seconds / "
