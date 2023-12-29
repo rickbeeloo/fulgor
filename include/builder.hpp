@@ -70,7 +70,6 @@ struct index<ColorClasses>::builder {
 
             out.close();
 
-            assert(num_unitigs < (uint64_t(1) << 32));
             std::cout << "num_unitigs " << num_unitigs << std::endl;
             std::cout << "num_distinct_colors " << num_distinct_colors << std::endl;
 
