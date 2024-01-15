@@ -51,55 +51,6 @@ int do_map(FulgorIndex const& index, fastx_parser::FastxParser<fastx_parser::Rea
            pseudoalignment_algorithm algo, const double threshold, std::ofstream& out_file,
            std::mutex& iomut, std::mutex& ofile_mut) {
     std::vector<uint32_t> colors;  // result of pseudo-alignment
-<<<<<<< HEAD
-    std::stringstream ss;
-    uint64_t buff_size = 0;
-    constexpr uint64_t buff_thresh = 50;
-
-    if ((algo == pseudoalignment_algorithm::SKIPPING or
-         algo == pseudoalignment_algorithm::SKIPPING_KALLISTO) and
-        (index.get_dict().canonicalized())) {
-        std::vector<uint64_t> unitig_ids;                           // for use with skipping
-        std::vector<std::pair<projected_hits, int>> kallisto_hits;  // for use with kallisto psa
-
-        piscem_psa::hit_searcher<FulgorIndex> hs(&index);
-        sshash::streaming_query_canonical_parsing qc(&index.get_dict());
-
-        auto get_hits_piscem_psa = [&qc, &hs](const std::string& seq,
-                                              std::vector<uint64_t>& unitig_ids) -> void {
-            hs.clear();
-            auto had_hits = hs.get_raw_hits_sketch(seq, qc, true, false);
-            if (had_hits) {
-                for (auto& h : hs.get_left_hits()) {
-                    if (!h.second.empty()) { unitig_ids.push_back(h.second.contigIdx_); }
-                }
-            }
-        };
-
-        auto get_hits_kallisto_psa = [&index, &kallisto_hits](
-                                         const std::string& seq,
-                                         std::vector<uint64_t>& unitig_ids) -> void {
-            kallisto_hits.clear();
-            match(seq, seq.length(), &index, kallisto_hits);
-            if (!kallisto_hits.empty()) {
-                for (auto& h : kallisto_hits) { unitig_ids.push_back(h.first.contigIdx_); }
-            }
-        };
-        // Get the read group by which this thread will
-        // communicate with the parser (*once per-thread*)
-        auto rg = rparser.getReadGroup();
-        while (rparser.refill(rg)) {
-            // Here, rg will contain a chunk of read pairs we can process.
-            for (auto const& record : rg) {
-                switch (algo) {
-                    case pseudoalignment_algorithm::SKIPPING:
-                        get_hits_piscem_psa(record.seq, unitig_ids);
-                        break;
-                    case pseudoalignment_algorithm::SKIPPING_KALLISTO:
-                        get_hits_kallisto_psa(record.seq, unitig_ids);
-                        break;
-                    default:
-=======
     const uint64_t num_docs = index.num_docs();
 
     top_range_reporter top_rr;
@@ -202,7 +153,6 @@ int do_map(FulgorIndex const& index, fastx_parser::FastxParser<fastx_parser::Rea
                     n = record.seq.length() - (num_chunks - 1) * n;
                     if (n < index.k() or n < chunk_length / 2) {
                         skip_last_chunk = true;
->>>>>>> upstream/dev
                         break;
                     }
                 }
