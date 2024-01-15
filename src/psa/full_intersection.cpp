@@ -176,7 +176,7 @@ void meta_intersect(std::vector<Iterator>& iterators, std::vector<uint32_t>& col
 }
 
 void stream_through(sshash::dictionary const& k2u, std::string_view sequence,
-                    std::vector<uint32_t>& unitig_ids) {
+                    std::vector<uint64_t>& unitig_ids) {
     sshash::streaming_query_canonical_parsing query(&k2u);
     query.start();
     const uint64_t num_kmers = sequence.length() - k2u.k() + 1;
