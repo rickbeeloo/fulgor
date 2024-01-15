@@ -175,8 +175,13 @@ void meta_intersect(std::vector<Iterator>& iterators, std::vector<uint32_t>& col
     }
 }
 
+<<<<<<< HEAD
 void stream_through(sshash::dictionary const& k2u, std::string const& sequence,
                     std::vector<uint64_t>& unitig_ids) {
+=======
+void stream_through(sshash::dictionary const& k2u, std::string_view sequence,
+                    std::vector<uint32_t>& unitig_ids) {
+>>>>>>> upstream/dev
     sshash::streaming_query_canonical_parsing query(&k2u);
     query.start();
     const uint64_t num_kmers = sequence.length() - k2u.k() + 1;
@@ -193,7 +198,7 @@ void stream_through(sshash::dictionary const& k2u, std::string const& sequence,
 }
 
 template <typename ColorClasses>
-void index<ColorClasses>::pseudoalign_full_intersection(std::string const& sequence,
+void index<ColorClasses>::pseudoalign_full_intersection(std::string_view sequence,
                                                         std::vector<uint32_t>& colors) const {
     if (sequence.length() < m_k2u.k()) return;
     colors.clear();

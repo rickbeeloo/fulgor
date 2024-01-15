@@ -44,7 +44,7 @@ void merge(std::vector<Iterator>& iterators, std::vector<uint32_t>& colors,
 }
 
 uint64_t stream_through_with_multiplicities(sshash::dictionary const& k2u,
-                                            std::string const& sequence,
+                                            std::string_view sequence,
                                             std::vector<scored_id>& unitig_ids) {
     sshash::streaming_query_canonical_parsing query(&k2u);
     query.start();
@@ -68,7 +68,7 @@ uint64_t stream_through_with_multiplicities(sshash::dictionary const& k2u,
 }
 
 template <typename ColorClasses>
-void index<ColorClasses>::pseudoalign_threshold_union(std::string const& sequence,
+void index<ColorClasses>::pseudoalign_threshold_union(std::string_view sequence,
                                                       std::vector<uint32_t>& colors,
                                                       const double threshold) const {
     if (sequence.length() < m_k2u.k()) return;
